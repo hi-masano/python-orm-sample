@@ -2,7 +2,7 @@ COMPOSE  := docker compose
 TOOLS    := $(COMPOSE) run --rm --no-deps tools
 TOOLS_DB := $(COMPOSE) run --rm tools
 
-.PHONY: lock build test lint up down
+.PHONY: lock build test lint up down seed
 lock:
 	docker run --rm -v "$(CURDIR)":/w -w /w ghcr.io/astral-sh/uv:0.5.11-python3.12-bookworm-slim uv lock
 build:
@@ -31,3 +31,7 @@ up:
 	$(COMPOSE) up -d --build --wait db api
 down:
 	$(COMPOSE) down -v --remove-orphans
+
+.PHONY: seed
+seed:
+	$(COMPOSE) exec -T api python -m seeds.run --profile e2e
