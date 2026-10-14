@@ -2,7 +2,7 @@ COMPOSE  := docker compose
 TOOLS    := $(COMPOSE) run --rm --no-deps tools
 TOOLS_DB := $(COMPOSE) run --rm tools
 
-.PHONY: lock build test lint
+.PHONY: lock build test lint up down
 lock:
 	docker run --rm -v "$(CURDIR)":/w -w /w ghcr.io/astral-sh/uv:0.5.11-python3.12-bookworm-slim uv lock
 build:
@@ -26,3 +26,8 @@ migrate:
 check-migrations:
 	$(TOOLS) python -m codegen checksum-verify
 	$(TOOLS_DB) sh -c 'alembic upgrade head && alembic check'
+
+up:
+	$(COMPOSE) up -d --build --wait db api
+down:
+	$(COMPOSE) down -v --remove-orphans
