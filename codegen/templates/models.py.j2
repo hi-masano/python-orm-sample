@@ -1,0 +1,63 @@
+{{ header }}
+from __future__ import annotations
+
+from datetime import datetime
+
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    Text,
+    false,
+    func,
+    true,
+)
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+NAMING_CONVENTION = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
+
+
+class Base(DeclarativeBase):
+    metadata = MetaData(naming_convention=NAMING_CONVENTION)
+
+{% for t in associations %}
+
+{{ t.name }} = Table(
+    {{ t.name|pyrepr }},
+    Base.metadata,
+{% for col in t.columns %}
+    Column({{ col }}),
+{% endfor %}
+{% if t.comment %}
+    comment={{ t.comment|pyrepr }},
+{% endif %}
+)
+{% endfor %}
+{% for m in models %}
+
+
+class {{ m.class_name }}(Base):
+    __tablename__ = {{ m.table|pyrepr }}
+{% if m.comment %}
+    __table_args__ = {"comment": {{ m.comment|pyrepr }}}
+{% endif %}
+
+{% for c in m.columns %}
+    {{ c.name }}: Mapped[{{ c.annotation }}] = mapped_column({{ c.args }})
+{% endfor %}
+{% for r in m.relationships %}
+    {{ r.name }}: Mapped[{{ r.annotation }}] = relationship({{ r.args }})
+{% endfor %}
+{% endfor %}

@@ -1,0 +1,40 @@
+# DB スキーマの唯一の正 (Source of Truth)。
+# 編集後: make generate → make migration m="変更内容"
+tables:
+  users:
+    model: User
+    comment: 利用者
+    columns:
+      id: {type: integer, primary_key: true}
+      email: {type: string, length: 255, unique: true, comment: ログイン用メールアドレス}
+      name: {type: string, length: 100}
+      created_at: {type: datetime, server_default: now}
+    relationships:
+      posts: {target: posts, many: true, back_populates: author}
+  posts:
+    model: Post
+    comment: 投稿
+    columns:
+      id: {type: integer, primary_key: true}
+      author_id: {type: integer, foreign_key: users.id, on_delete: CASCADE, index: true}
+      title: {type: string, length: 200}
+      body: {type: text}
+      published: {type: boolean, server_default: "false"}
+      created_at: {type: datetime, server_default: now}
+    relationships:
+      author: {target: users, back_populates: posts}
+      tags: {target: tags, many: true, secondary: post_tags, back_populates: posts}
+  tags:
+    model: Tag
+    comment: タグ
+    columns:
+      id: {type: integer, primary_key: true}
+      name: {type: string, length: 50, unique: true}
+    relationships:
+      posts: {target: posts, many: true, secondary: post_tags, back_populates: tags}
+  post_tags:
+    association: true
+    comment: posts と tags の中間テーブル
+    columns:
+      post_id: {type: integer, primary_key: true, foreign_key: posts.id, on_delete: CASCADE}
+      tag_id: {type: integer, primary_key: true, foreign_key: tags.id, on_delete: CASCADE}

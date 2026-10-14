@@ -12,3 +12,7 @@ test:
 lint:
 	$(TOOLS) ruff check .
 	$(TOOLS) ruff format --check .
+
+.PHONY: generate
+generate:
+	$(TOOLS) python -m codegen all
