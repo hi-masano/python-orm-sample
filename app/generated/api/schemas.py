@@ -50,5 +50,5 @@ class PostCreate(BaseModel):
     author_id: int
     title: str = Field(..., max_length=200, min_length=1)
     body: str
-    published: bool | None = False
-    tag_names: list[TagName] | None = Field([], validate_default=True)
+    published: bool = False
+    tag_names: list[TagName] = Field([], validate_default=True)

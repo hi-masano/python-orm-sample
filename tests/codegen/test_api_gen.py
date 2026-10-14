@@ -43,7 +43,7 @@ SPEC = {
         "/items": {
             "post": {
                 "operationId": "createItem",
-                "requestBody": _json(ITEM_CREATE),
+                "requestBody": {"required": True, **_json(ITEM_CREATE)},
                 "responses": {"201": _json(ITEM)},
             }
         },
@@ -77,6 +77,14 @@ def _get_params(s):
     return s["paths"]["/items/{item_id}"]["get"]["parameters"]
 
 
+def _post(s):
+    return s["paths"]["/items"]["post"]
+
+
+def _delete(s):
+    return s["paths"]["/items/{item_id}"]["delete"]
+
+
 def _bad_ref(s):
     schema = s["paths"]["/items"]["post"]["requestBody"]["content"]["application/json"]["schema"]
     schema.update({"$ref": "#/components/schemas/bad_name"})
@@ -90,6 +98,15 @@ def _bad_ref(s):
         (_bad_ref, "PascalCase"),
         (lambda s: _get_params(s)[2].update(name="qQ"), "snake_case"),
         (lambda s: s["paths"]["/items"]["post"].update(responses={"400": {}}), "2xx"),
+        (lambda s: s["paths"]["/items"].update(head={"operationId": "h"}), "HEAD"),
+        (lambda s: s["paths"]["/items"].update({"$ref": "x.yaml"}), "path item"),
+        (lambda s: _get_params(s)[2]["schema"].update(enum=["a"]), "enum"),
+        (lambda s: _get_params(s)[2]["schema"].update(format="uuid"), "format"),
+        (lambda s: _get_params(s)[2]["schema"].update(pattern="x"), "pattern"),
+        (lambda s: s["paths"]["/items"]["post"]["requestBody"].update(required=False), "required"),
+        (lambda s: s["paths"]["/items"]["post"]["requestBody"].pop("required"), "required"),
+        (lambda s: _post(s)["responses"].update({"200": _json(ITEM)}), "1 つだけ"),
+        (lambda s: _delete(s)["responses"]["204"].update(_json(ITEM)), "204"),
     ],
 )
 def test_parse_errors(mutate, message):

@@ -28,6 +28,8 @@ CONSTRAINTS = {
     "minLength": "min_length",
     "maxLength": "max_length",
 }
+PARAM_SCHEMA_KEYS = {"type", "default", "minimum", "maximum", "minLength", "maxLength"}
+UNSUPPORTED_METHODS = ("head", "options", "trace")
 REF_PREFIX = "#/components/schemas/"
 
 
@@ -116,6 +118,11 @@ def _param(raw: dict, where: str) -> Param:
     if not SNAKE.match(name):
         raise CodegenError(f"{where}: パラメータ名 {name} は snake_case にしてください")
     schema = raw.get("schema", {})
+    if unknown := sorted(set(schema) - PARAM_SCHEMA_KEYS):
+        raise CodegenError(
+            f"{where}: パラメータ {name} のスキーマキー {unknown} は未対応です"
+            f" (対応: {sorted(PARAM_SCHEMA_KEYS)})"
+        )
     py_type = schema_type(schema, where)
     if py_type not in PRIMITIVES.values():
         raise CodegenError(f"{where}: パラメータ {name} はプリミティブ型のみ対応です")
@@ -129,9 +136,15 @@ def _success(responses: dict, where: str) -> tuple[int, str | None]:
     codes = sorted(int(c) for c in normalized if c.startswith("2"))
     if not codes:
         raise CodegenError(f"{where}: 2xx レスポンスが定義されていません")
+    if len(codes) > 1:
+        raise CodegenError(f"{where}: 2xx レスポンスは 1 つだけ対応です (定義: {codes})")
     code = codes[0]
     content = (normalized[str(code)] or {}).get("content")
-    if code == 204 or not content:
+    if code == 204:
+        if content:
+            raise CodegenError(f"{where}: 204 レスポンスに content は定義できません")
+        return code, None
+    if not content:
         return code, None
     if "application/json" not in content:
         raise CodegenError(f"{where}: レスポンスは application/json のみ対応です")
@@ -141,6 +154,11 @@ def _success(responses: dict, where: str) -> tuple[int, str | None]:
 def parse_operations(spec: dict) -> list[Operation]:
     ops: list[Operation] = []
     for path, item in spec.get("paths", {}).items():
+        if "$ref" in item:
+            raise CodegenError(f"{path}: path item の $ref は未対応です")
+        for method in UNSUPPORTED_METHODS:
+            if method in item:
+                raise CodegenError(f"{method.upper()} {path}: HTTP メソッドは未対応です")
         for method in HTTP_METHODS:
             op = item.get(method)
             if op is None:
@@ -157,6 +175,8 @@ def parse_operations(spec: dict) -> list[Operation]:
                     raise CodegenError(f"{where}: パスパラメータ {name} が parameters にありません")
             body_type = None
             if "requestBody" in op:
+                if not op["requestBody"].get("required", False):
+                    raise CodegenError(f"{where}: requestBody は required: true のみ対応です")
                 content = op["requestBody"].get("content", {})
                 if "application/json" not in content:
                     raise CodegenError(f"{where}: requestBody は application/json のみ対応です")
@@ -206,6 +226,9 @@ def generate(root: Path) -> list[Path]:
             "--use-standard-collections",
             "--use-union-operator",
             "--field-constraints",
+            "--strict-nullable",
+            "--formatters",
+            "builtin",
             "--disable-timestamp",
             "--custom-file-header",
             hdr.rstrip("\n"),
