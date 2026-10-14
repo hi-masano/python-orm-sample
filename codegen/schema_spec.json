@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["tables"],
+  "additionalProperties": false,
+  "properties": {
+    "tables": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+      "additionalProperties": {
+        "type": "object",
+        "required": ["columns"],
+        "additionalProperties": false,
+        "properties": {
+          "model": {"type": "string", "pattern": "^[A-Z][A-Za-z0-9]*$"},
+          "association": {"type": "boolean"},
+          "comment": {"type": "string"},
+          "columns": {
+            "type": "object",
+            "minProperties": 1,
+            "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+            "additionalProperties": {
+              "type": "object",
+              "required": ["type"],
+              "additionalProperties": false,
+              "properties": {
+                "type": {"enum": ["integer", "bigint", "string", "text", "boolean", "datetime"]},
+                "length": {"type": "integer", "minimum": 1},
+                "primary_key": {"type": "boolean"},
+                "nullable": {"type": "boolean"},
+                "unique": {"type": "boolean"},
+                "index": {"type": "boolean"},
+                "foreign_key": {"type": "string", "pattern": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$"},
+                "on_delete": {"enum": ["CASCADE", "SET NULL", "RESTRICT"]},
+                "server_default": {"enum": ["now", "true", "false"]},
+                "comment": {"type": "string"}
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"},
+            "additionalProperties": {
+              "type": "object",
+              "required": ["target"],
+              "additionalProperties": false,
+              "properties": {
+                "target": {"type": "string"},
+                "many": {"type": "boolean"},
+                "secondary": {"type": "string"},
+                "back_populates": {"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

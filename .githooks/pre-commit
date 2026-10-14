@@ -1,0 +1,6 @@
+#!/bin/sh
+# 生成物の手編集・仕様との不整合・マイグレーション改ざんをコミット前に検出する
+set -e
+make check-generated
+make lint
+docker compose run --rm --no-deps tools python -m codegen checksum-verify
