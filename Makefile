@@ -42,3 +42,16 @@ e2e:
 	$(COMPOSE) down -v --remove-orphans
 	$(COMPOSE) up -d --build --wait db api
 	npm --prefix e2e test
+
+GENERATED := app/generated docs/er e2e/generated
+
+.PHONY: check-generated check setup
+check-generated: generate
+	@git diff --exit-code -- $(GENERATED) \
+	  || (echo "NG: 生成物が仕様と一致しません。生成物を直接編集せず、仕様を直して make generate してください" && exit 1)
+	@test -z "$$(git ls-files --others --exclude-standard -- $(GENERATED))" \
+	  || (echo "NG: 未追跡の生成物があります (git add してください)" && exit 1)
+check: check-generated lint test check-migrations
+setup:
+	git config core.hooksPath .githooks
+	npm --prefix e2e ci
