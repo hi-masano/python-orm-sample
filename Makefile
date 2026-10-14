@@ -16,6 +16,7 @@ lint:
 .PHONY: generate
 generate:
 	$(TOOLS) python -m codegen all
+	npm --prefix e2e run --silent gen:types
 
 .PHONY: migration migrate check-migrations
 migration:
@@ -35,3 +36,9 @@ down:
 .PHONY: seed
 seed:
 	$(COMPOSE) exec -T api python -m seeds.run --profile e2e
+
+.PHONY: e2e
+e2e:
+	$(COMPOSE) down -v --remove-orphans
+	$(COMPOSE) up -d --build --wait db api
+	npm --prefix e2e test

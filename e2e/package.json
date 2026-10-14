@@ -1,0 +1,14 @@
+{
+  "name": "python-orm-sample-e2e",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "gen:types": "openapi-typescript ../openapi/openapi.yaml -o generated/api.d.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.48.2",
+    "@types/node": "22.7.5",
+    "openapi-typescript": "7.4.1",
+    "typescript": "5.6.3"
+  }
+}
