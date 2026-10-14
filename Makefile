@@ -16,3 +16,13 @@ lint:
 .PHONY: generate
 generate:
 	$(TOOLS) python -m codegen all
+
+.PHONY: migration migrate check-migrations
+migration:
+	@test -n "$(m)" || (echo 'usage: make migration m="message"' && exit 1)
+	$(TOOLS_DB) sh -c 'alembic upgrade head && alembic revision --autogenerate -m "$(m)"'
+migrate:
+	$(TOOLS_DB) alembic upgrade head
+check-migrations:
+	$(TOOLS) python -m codegen checksum-verify
+	$(TOOLS_DB) sh -c 'alembic upgrade head && alembic check'
