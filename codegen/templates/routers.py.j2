@@ -1,0 +1,36 @@
+{{ header }}
+from collections.abc import Callable
+from typing import Annotated
+
+from fastapi import APIRouter, Body, Depends, Path, Query, Response
+
+from app.generated.api import schemas
+from app.generated.api.handlers import ApiHandlers
+
+
+def build_router(get_handlers: Callable[..., ApiHandlers]) -> APIRouter:
+    router = APIRouter()
+{% for op in operations %}
+
+    @router.{{ op.method }}(
+        {{ op.path|pyrepr }},
+        operation_id={{ op.operation_id|pyrepr }},
+        status_code={{ op.status_code }},
+        response_model={{ op.response_type or "None" }},
+        tags={{ op.tags|list|pyrepr }},
+        summary={{ op.summary|pyrepr }},
+    )
+    def {{ op.func_name }}(
+{% for p in op.signature %}
+        {{ p }},
+{% endfor %}
+    ) -> {{ op.response_type or "Response" }}:
+{% if op.response_type %}
+        return handlers.{{ op.func_name }}({{ op.call_args }})
+{% else %}
+        handlers.{{ op.func_name }}({{ op.call_args }})
+        return Response(status_code={{ op.status_code }})
+{% endif %}
+{% endfor %}
+
+    return router

@@ -6,7 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from codegen import checksums, er_gen, models_gen
+from codegen import api_gen, checksums, er_gen, models_gen
 from codegen.render import CodegenError
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="codegen")
     sub = parser.add_subparsers(dest="cmd", required=True)
-    for name in ("models", "er", "all"):
+    for name in ("models", "er", "api", "all"):
         sub.add_parser(name)
     rec = sub.add_parser("checksum-record")
     rec.add_argument("path")
@@ -26,6 +26,8 @@ def main(argv: list[str] | None = None) -> int:
             models_gen.generate(ROOT)
         if args.cmd in ("er", "all"):
             er_gen.generate(ROOT)
+        if args.cmd in ("api", "all"):
+            api_gen.generate(ROOT)
         if args.cmd == "checksum-record":
             checksums.record(ROOT, Path(args.path))
         if args.cmd == "checksum-verify":

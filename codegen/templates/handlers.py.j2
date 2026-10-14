@@ -1,0 +1,19 @@
+{{ header }}
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+
+from app.generated.api import schemas
+
+
+class ApiHandlers(ABC):
+    """OpenAPI の各 operation に 1:1 対応する実装インターフェース.
+
+    実装は app/impl/handlers.py の Handlers クラスで行う。
+    """
+{% for op in operations %}
+
+    @abstractmethod
+    def {{ op.func_name }}(self{% if op.handler_params %}, *, {{ op.handler_params|join(", ") }}{% endif %}) -> {{ op.response_type or "None" }}:
+        """{{ op.method|upper }} {{ op.path }}{% if op.summary %} — {{ op.summary }}{% endif %}"""
+{% endfor %}

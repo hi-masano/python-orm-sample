@@ -1,0 +1,168 @@
+openapi: 3.0.3
+info:
+  title: python-orm-sample API
+  version: 0.1.0
+  description: API 仕様の唯一の正 (Source of Truth)。編集後は make generate。
+paths:
+  /health:
+    get:
+      operationId: healthCheck
+      tags: [system]
+      summary: ヘルスチェック
+      responses:
+        "200":
+          description: OK
+          content: {application/json: {schema: {$ref: "#/components/schemas/Health"}}}
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: ユーザー一覧
+      parameters:
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+        - {name: offset, in: query, schema: {type: integer, minimum: 0, default: 0}}
+      responses:
+        "200":
+          description: OK
+          content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/User"}}}}
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: ユーザー作成
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/UserCreate"}}}
+      responses:
+        "201":
+          description: Created
+          content: {application/json: {schema: {$ref: "#/components/schemas/User"}}}
+        "409":
+          description: email が重複
+          content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+  /users/{user_id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: ユーザー取得
+      parameters:
+        - {name: user_id, in: path, required: true, schema: {type: integer}}
+      responses:
+        "200":
+          description: OK
+          content: {application/json: {schema: {$ref: "#/components/schemas/User"}}}
+        "404":
+          description: Not Found
+          content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+  /posts:
+    get:
+      operationId: listPosts
+      tags: [posts]
+      summary: 投稿一覧
+      parameters:
+        - {name: tag, in: query, schema: {type: string}}
+        - {name: author_id, in: query, schema: {type: integer}}
+      responses:
+        "200":
+          description: OK
+          content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/Post"}}}}
+    post:
+      operationId: createPost
+      tags: [posts]
+      summary: 投稿作成
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: "#/components/schemas/PostCreate"}}}
+      responses:
+        "201":
+          description: Created
+          content: {application/json: {schema: {$ref: "#/components/schemas/Post"}}}
+        "400":
+          description: author が存在しない
+          content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+  /posts/{post_id}:
+    get:
+      operationId: getPost
+      tags: [posts]
+      summary: 投稿取得
+      parameters:
+        - {name: post_id, in: path, required: true, schema: {type: integer}}
+      responses:
+        "200":
+          description: OK
+          content: {application/json: {schema: {$ref: "#/components/schemas/Post"}}}
+        "404":
+          description: Not Found
+          content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+    delete:
+      operationId: deletePost
+      tags: [posts]
+      summary: 投稿削除
+      parameters:
+        - {name: post_id, in: path, required: true, schema: {type: integer}}
+      responses:
+        "204": {description: Deleted}
+        "404":
+          description: Not Found
+          content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}
+  /tags:
+    get:
+      operationId: listTags
+      tags: [tags]
+      summary: タグ一覧
+      responses:
+        "200":
+          description: OK
+          content: {application/json: {schema: {type: array, items: {$ref: "#/components/schemas/Tag"}}}}
+components:
+  schemas:
+    Health:
+      type: object
+      required: [status]
+      properties: {status: {type: string}}
+    Error:
+      type: object
+      required: [detail]
+      properties: {detail: {type: string}}
+    User:
+      type: object
+      required: [id, email, name, created_at]
+      properties:
+        id: {type: integer}
+        email: {type: string, format: email}
+        name: {type: string}
+        created_at: {type: string, format: date-time}
+    UserCreate:
+      type: object
+      required: [email, name]
+      properties:
+        email: {type: string, format: email, maxLength: 255}
+        name: {type: string, minLength: 1, maxLength: 100}
+    Tag:
+      type: object
+      required: [id, name]
+      properties:
+        id: {type: integer}
+        name: {type: string}
+    Post:
+      type: object
+      required: [id, author_id, title, body, published, tags, created_at]
+      properties:
+        id: {type: integer}
+        author_id: {type: integer}
+        title: {type: string}
+        body: {type: string}
+        published: {type: boolean}
+        tags: {type: array, items: {$ref: "#/components/schemas/Tag"}}
+        created_at: {type: string, format: date-time}
+    PostCreate:
+      type: object
+      required: [author_id, title, body]
+      properties:
+        author_id: {type: integer}
+        title: {type: string, minLength: 1, maxLength: 200}
+        body: {type: string}
+        published: {type: boolean, default: false}
+        tag_names:
+          type: array
+          default: []
+          items: {type: string, minLength: 1, maxLength: 50}
